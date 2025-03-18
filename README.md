@@ -184,5 +184,108 @@ GROUP BY supplier_id;
 ### 3.5. GROUP BY, WHERE e HAVING - Utilizando filtros em agrupamentos
 
 ```sql
+-- 1. Faça um agrupamento para descobrir a quantidade total de clientes por country. O seu agrupamento deve considerar apenas os clientes de contact_title = 'Owner'.
+SELECT
+	country,
+	COUNT(*)
+FROM customers
+WHERE contact_title = 'Owner'
+GROUP BY country;
+
+-- 2. Faça um agrupamento para descobrir a quantidade total de clientes por country. A query resultante deve conter apenas os países que têm mais de 10 clientes.
+SELECT
+	country,
+	COUNT(*)
+FROM customers
+GROUP BY country
+HAVING COUNT(*) > 10;
+```
+
+-----------------
+## 4. Joins no Postgres
+### 4.3. Exemplo prático 1
+
+```sql
+-- Faça um Join entre as tabelas products e order_details. Você deve retornar todas as colunas dessa duas tabelas.
+SELECT
+	*
+FROM order_details
+LEFT JOIN products
+	ON products.product_id = order_details.product_id;
+```
+
+### 4.4. Exemplo prático 2
+
+```sql
+-- 1. Avalie como as tabelas products e categories podem se relacionar. Qual coluna as duas têm em comum?
+-- Como poderíamos criar uma consulta que retornasse product_id, product_name, category_id, unit_price e category_name?
+SELECT
+	product_id,
+	product_name,
+	products.category_id,
+	unit_price,
+	category_name
+FROM products
+INNER JOIN categories
+	ON products.category_id = categories.category_id;
+```
+
+### 4.5. Exemplo prático 3
+
+```sql
+-- 2. Avalie como as tabelas customers e orders podem se relacionar. Qual coluna as duas têm em comum? Como poderíamos criar uma consulta que retornasse order_id, customer_id, order_date, contact_name? Será que existem alguns clientes que não fizeram nenhuma compra?
+SELECT
+	order_id,
+	customers.customer_id,
+	order_date,
+	contact_name
+FROM orders
+LEFT JOIN customers
+	ON orders.customer_id = customers.customer_id;
+
+SELECT DISTINCT customer_id FROM customers; -- 91 clientes
+SELECT DISTINCT customer_id FROM orders; -- 89 clientes
+
+-- Faça um join entre as tabelas. Você seria capaz de descobrir qual o nome dos clientes que não fizeram nenhuma compra?
+SELECT
+	order_id,
+	customers.customer_id,
+	order_date,
+	contact_name
+FROM customers
+LEFT JOIN orders
+	ON orders.customer_id = customers.customer_id
+WHERE order_id IS NULL;
+```
+
+### 4.6. Join, Group By e Order By - Exemplo prático
+
+```sql
+-- 1. Utilize os comandos join, group by e order by para criar um agrupamento que retorne como resultado a quantidade_total (SUM(quantity)) para cada product_name. Ordene o resultado, do maior para o menor, considerando a quantitade_total.
+SELECT
+	product_name,
+	SUM(o.quantity) AS quantidade_total
+FROM products AS p
+LEFT JOIN order_details AS o
+	ON p.product_id = o.product_id
+GROUP BY product_name
+ORDER BY quantidade_total DESC;
+```
+
+### 4.7. Join, Group By, Where e Having - Exemplo prático
+
+```sql
+-- Faça o agrupamento da quantidade_total por product_name considerando apenas os produtos da classe Luxo (acima de R$ 80,00).
+SELECT
+	product_name,
+	SUM(o.quantity) AS quantidade_total
+FROM products AS p
+LEFT JOIN order_details AS o
+	ON p.product_id = o.product_id
+WHERE p.unit_price >= 80
+GROUP BY product_name
+ORDER BY quantidade_total DESC;
+
+-- Faça o agrupamento de quantidade_total por product_name considerando apenas os produtos que tiveram uma quantidade_total maior ou igual 1000.
 
 ```
