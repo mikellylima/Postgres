@@ -285,7 +285,239 @@ LEFT JOIN order_details AS o
 WHERE p.unit_price >= 80
 GROUP BY product_name
 ORDER BY quantidade_total DESC;
+```
 
--- Faça o agrupamento de quantidade_total por product_name considerando apenas os produtos que tiveram uma quantidade_total maior ou igual 1000.
+-----------------
+## 5. Views no Postgres
+### 5.1. Create, Replace, Alter e Drop View
+
+```sql
+CREATE OR REPLACE VIEW vwprodutos AS
+SELECT
+	product_id,
+	product_name,
+	unit_price
+FROM products;
+
+-- Altere a view criada para incluir a coluna units_in_stock
+CREATE OR REPLACE VIEW vwprodutos AS
+SELECT
+	product_id,
+	product_name,
+	unit_price,
+	units_in_stock
+FROM products;
+
+-- Altere o nome da view para 'vw_prod'
+ALTER VIEW vwprodutos RENAME TO vw_prod;
+
+-- Exclua a view 'vw_prod'
+DROP VIEW IF EXISTS vw_prod;
+```
+
+-----------------
+## 6. Operações CRUD no PostgreSQL
+### 6.1. Introdução, Create e Drop Database
+
+```sql
+-- Criando e deletando um banco de dados.
+CREATE DATABASE teste;
+DROP DATABASE teste;
+
+CREATE DATABASE hashtag;
+```
+
+### 6.2. Tipos de Dados, Create e Drop Table
+
+```sql
+CREATE TABLE alunos(
+	ID_Aluno INT,
+	Nome_Aluno VARCHAR(100),
+	Email VARCHAR(100)
+);
+
+CREATE TABLE cursos(
+	ID_Curson INT,
+	Nome_Curso VARCHAR(100),
+	Preco_Curso NUMERIC(10, 2)
+);
+
+CREATE TABLE matriculas(
+	ID_Matricula INT,
+	ID_Aluno INT,
+	ID_Curso INT,
+	Data_Cadastro DATE
+);
+
+DROP TABLE alunos;
+DROP TABLE cursos;
+DROP TABLE matriculas;
+```
+
+### 6.3. Constraints (Restrições)
+
+```sql
+CREATE TABLE alunos(
+	ID_Aluno INT,
+	Nome_Aluno VARCHAR(100) NOT NULL,
+	Email VARCHAR(100) NOT NULL,
+	PRIMARY KEY(ID_Aluno)
+);
+
+CREATE TABLE cursos(
+	ID_Curso INT,
+	Nome_Curso VARCHAR(100) NOT NULL,
+	Preco_Curso NUMERIC(10, 2) NOT NULL,
+	PRIMARY KEY(ID_Curso)
+);
+
+CREATE TABLE matriculas(
+	ID_Matricula INT,
+	ID_Aluno INT NOT NULL,
+	ID_Curso INT NOT NULL,
+	Data_Cadastro DATE NOT NULL,
+	PRIMARY KEY(ID_Matricula),
+	FOREIGN KEY(ID_Aluno) REFERENCES alunos(ID_Aluno),
+	FOREIGN KEY(ID_Curso) REFERENCES cursos(ID_Curso)
+);
+```
+
+### 6.4. Insert into, Update, Delete, Truncate e Drop (cascade)
+
+```sql
+INSERT INTO alunos(ID_Aluno, Nome_Aluno, Email)
+VALUES
+	(1, 'Ana', 'ana@gmail.com'),
+	(2, 'Bruno', 'bruno@gmail.com'),
+	(3, 'Carla', 'carla@gmail.com'),
+	(4, 'Diego', 'diego@gmail.com');
+
+SELECT * FROM alunos;
+
+INSERT INTO cursos(ID_Curso, Nome_Curso, Preco_Curso)
+VALUES
+	(1, 'Excel', 100),
+	(2, 'VBA', 200),
+	(3, 'Power BI', 150);
+
+SELECT * FROM cursos;
+
+INSERT INTO matriculas(ID_Matricula, ID_Aluno, ID_Curso, Data_Cadastro)
+VALUES
+	(1, 1, 1, '2021/03/11'),
+	(2, 1, 2, '2021/06/21'),
+	(3, 2, 3, '2021/01/08'),
+	(4, 3, 1, '2021/04/03'),
+	(5, 4, 1, '2021/05/10'),
+	(6, 4, 3, '2021/05/10');
+
+SELECT * FROM matriculas;
+
+UPDATE cursos
+SET Preco_Curso = 300
+WHERE ID_Curso = 1;
+
+DELETE FROM matriculas
+WHERE ID_Matricula = 6;
+
+-- Deleta todos os registros da tabela de uma vez, mas a tabela continua existindo.
+TRUNCATE TABLE matriculas;
+
+-- DROP TABLE
+DROP TABLE alunos CASCADE;
+```
+
+---------------
+## 7. Funções de Número, Texto e Data
+### 7.1. Funções de Número - Ceiling, Floor, Round, Trunc
+
+```sql
+SELECT
+	AVG(unit_price),
+	CEILING(AVG(unit_price)), -- Valor inteiro acima
+	FLOOR(AVG(unit_price)), -- Valor inteiro abaixo
+	ROUND(CAST(AVG(unit_price) AS NUMERIC), 3), -- Arredonda para 3 casas decimais
+	TRUNC(CAST(AVG(unit_price) AS NUMERIC), 3) -- Corta o valor com 3 casas decimais
+FROM products;
+```
+
+### 7.2. Funções de Texto - Upper, Lower, Length, Initcap, Replace, Substring e Strpos
+
+```sql
+SELECT
+	first_name,
+	UPPER(first_name),
+	LOWER(first_name),
+	LENGTH(first_name),
+	INITCAP('SQL impressionador')
+FROM employees;
+
+SELECT
+	contact_name,
+	contact_title,
+	REPLACE(contact_title, 'Owner', 'CEO')
+FROM customers;
+
+SELECT
+	'ABC-9999',
+	SUBSTRING('ABC-9999', 1, STRPOS('ABC-9999', '-') - 1),
+	SUBSTRING('ABC-9999', STRPOS('ABC-9999', '-') + 1, 100),
+	STRPOS('ABC-9999', '-');
+```
+
+### 7.3. Funções de Data - Current_Date, Age, Date_Part
+
+```sql
+SELECT
+	first_name,
+	birth_date,
+	CURRENT_DATE,
+	AGE(birth_date),
+	DATE_PART('day', birth_date),
+	DATE_PART('month', birth_date),
+	DATE_PART('year', birth_date)
+FROM employees;
+```
+
+-------------
+## 8. Subqueries
+### 8.1. O que é uma Subquery
+
+```sql
 
 ```
+
+### 8.2. Subquery: Cláusula WHERE
+
+```sql
+
+```
+
+### 8.3. Subquery: Cláusula FROM
+
+```sql
+
+```
+
+### 8.4. Subquery: Cláusula SELECT
+
+```sql
+
+```
+
+### 8.5. Subquery: Corrigindo a análise de pedidos acima da média
+
+```sql
+
+```
+
+
+
+
+
+
+
+
+
+
+
