@@ -484,31 +484,196 @@ FROM employees;
 ### 8.1. O que é uma Subquery
 
 ```sql
-
+-- Quais produtos têm um preço acima da média?
+SELECT * FROM products
+WHERE unit_price >= (
+	SELECT AVG(unit_price) FROM products
+);
 ```
 
 ### 8.2. Subquery: Cláusula WHERE
 
 ```sql
-
+-- Quais pedidos têm uma quantidade vendida acima da quantidade vendida média?
+SELECT * FROM order_details
+WHERE quantity >= (
+	SELECT AVG(quantity) FROM order_details
+);
 ```
 
 ### 8.3. Subquery: Cláusula FROM
 
 ```sql
-
+-- Qual é a média de clientes de acordo com o cargo?
+SELECT
+	AVG(total_clientes)
+FROM (
+	SELECT
+		contact_title,
+		COUNT(*) total_clientes
+	FROM customers
+	GROUP BY contact_title
+) t;
 ```
 
 ### 8.4. Subquery: Cláusula SELECT
 
 ```sql
-
+-- Faça uma consulta à tabela products e adicione uma coluna que contenha a média geral de preço dos produtos.
+SELECT
+	*,
+	(SELECT AVG(unit_price) FROM products) media_preco
+FROM products;
 ```
 
 ### 8.5. Subquery: Corrigindo a análise de pedidos acima da média
 
 ```sql
+-- Quais pedidos têm uma quantidade vendida acima da quantidade vendida média?
+SELECT
+	order_id,
+	SUM(quantity)
+FROM order_details
+GROUP BY order_id
+HAVING SUM(quantity) >= (
 
+		SELECT
+			AVG(total_vendido)
+		FROM (
+			SELECT
+				order_id,
+				sum(quantity) total_vendido
+			FROM order_details
+			GROUP BY order_id) t
+);
+```
+
+
+---------------
+## 9. Variáveis e Blocos Anônimos
+### 9.1. Variáveis, Datatypes e Blocos Anônimos
+
+```sql
+do $$
+declare
+	nome varchar(100);
+	salario decimal;
+	data_contratacao date;
+
+begin
+	nome := 'André';
+	salario := 3500;
+	data_contratacao := '2018-10-25';
+	raise notice 'O funcionário % foi contratado em % e recebe um salário de % .', nome, data_contratacao, salario;
+
+end $$;
+```
+
+### 9.2. Blocos Anônimos - Exemplos
+
+```sql
+-- 1- Criando uma calculadora simples de valor vendido. Utilize as variáveis 'quantidade', 'preco', 'valor_vendido' e 'vendedor' para isso.
+do $$
+declare
+	quantidade int := 50;
+	preco decimal := 100;
+	valor_vendido int;
+	vendedor varchar(100) := 'Henrique';
+
+begin
+	valor_vendido := quantidade * preco;
+
+	raise notice 'O vendedor % vendeu um total de %', vendedor, valor_vendido;
+
+end $$;
+
+-- 2- Quantos produtos têm o preço acima da média de preços?
+do $$
+declare
+	media_preco decimal;
+	qtd_produtos_acima_media int;
+
+begin
+	media_preco = (select avg(unit_price) from products);
+	qtd_produtos_acima_media = (select count(*) from products where unit_price >= media_preco);
+
+	raise notice 'A média de preço é: %.', media_preco;
+	raise notice 'A qtd de produtos com preço acima da média é de: % produtos.', qtd_produtos_acima_media;
+
+end $$;
+```
+
+
+-------------
+## 10. Functions
+### 10.1. O que é e como criar uma Function
+
+```sql
+-- Crie uma Function que analisa o estoque dos produtos. Essa Function deve retornar o total de produtos que possuem um total de estoque entre um estoque mínimo e um estoque máximo, ambos definidos pelo usuário da Function.
+CREATE OR REPLACE FUNCTION analise_estoque(estoque_min int, estoque_max int)
+RETURNS int
+LANGUAGE plpgsql
+AS
+$$
+DECLARE
+	contagem_estoque int;
+	
+BEGIN
+	contagem_estoque = (SELECT COUNT(*) FROM products WHERE units_in_stock BETWEEN estoque_min AND estoque_max);
+
+	RETURN contagem_estoque;
+
+END $$;
+
+SELECT analise_estoque(10, 50);
+SELECT COUNT(*) - analise_estoque(10, 50) FROM products;
+```
+
+### 10.2. Formas de chamar uma Function e como excluir uma Function
+
+```sql
+-- Existems 3 formas de chamar uma função:
+-- 1. Usando a notação por posição
+SELECT analise_estoque(10, 50);
+
+-- 2. Usando a notação por nome do parâmetro
+SELECT analise_estoque(estoque_min := 20, estoque_max := 50);
+
+-- 3. Usando a notação mista
+SELECT analise_estoque(20, estoque_max := 50); -- não recomendável.
+
+-- Excluindo uma Function
+DROP FUNCTION IF EXISTS analise_estoque;
+```
+
+### 10.3. Functions que retornam uma tabela e como copiar tipo de dados para uma variável
+
+```sql
+-- Crie uma Function que retorna uma tabela contendo a listas de clientes que têm o contact_title = 'Owner'. A tabela retornada pela function deve conter apenas as colunas id, nome, telefone e cargo dos clientes.
+CREATE OR REPLACE FUNCTION busca_clientes(title varchar)
+RETURNS TABLE
+	(
+		id customers.customer_id%type,
+		nome customers.contact_name%type,
+		telefone customers.phone%type,
+		cargo customers.contact_title%type
+	)
+LANGUAGE plpgsql
+AS
+$$
+BEGIN
+	
+	RETURN QUERY 
+		SELECT
+			customer_id,
+			contact_name,
+			phone,
+			contact_title
+		FROM customers
+		WHERE contact_title = title;
+END $$;
+
+SELECT * FROM busca_clientes('Owner');
 ```
 
 
