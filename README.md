@@ -677,12 +677,77 @@ SELECT * FROM busca_clientes('Owner');
 ```
 
 
+------------
+## Transactions e Procedures
+### 11.1. O que é uma Transação?
 
+```sql
+CREATE TABLE contas(
+	id int,
+	nome varchar(100),
+	saldo decimal
+);
 
+SELECT * FROM contas;
 
+INSERT INTO contas(id, nome, saldo)
+VALUES(1, 'Ana', 5000);
 
+-- Para se ter o controle da transação se usa o begin transaction e o commit.
 
+BEGIN TRANSACTION;
+INSERT INTO contas(id, nome, saldo)
+VALUES(2, 'Bruno', 10000);
 
+COMMIT;
+```
 
+### 11.2. O que é, como criar e excluir uma Procedure
 
+```sql
+-- Functions e blocos anônimos não são capazes de executar transação. A procedure é capaz de executar códigos e fazer alterações. Não precisa do returns.
+CREATE OR REPLACE PROCEDURE cadastra_cliente(novo_id int, novo_cliente varchar(100), saldo_inicial decimal)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+	INSERT INTO contas(id, nome, saldo)
+	VALUES (novo_id, novo_cliente, saldo_inicial);
 
+	COMMIT;
+
+END $$;
+
+CALL cadastra_cliente(3, 'Caio', 300);
+
+SELECT * FROM contas;
+
+DROP PROCEDURE cadastra_cliente;
+```
+
+### 11.3. Exemplo - Procedure para registro de transferência bancária
+
+```sql
+-- Crie uma Procedure que controle transferências bancárias entre duas contas.
+CREATE OR REPLACE PROCEDURE transferencia(remetente int, destinatario int, valor decimal)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+
+	-- subtrair o montante transferido pelo remetente
+	UPDATE contas
+	SET saldo = saldo - valor
+	WHERE id = remetente;
+
+	-- adicionar o montante transferido para o destinatário
+	UPDATE contas
+	SET saldo = saldo + valor
+	WHERE id = destinatario;
+
+	COMMIT;
+
+END $$;
+
+CALL transferencia(1, 2, 500);
+
+SELECT * FROM contas;
+```
